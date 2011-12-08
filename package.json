@@ -1,0 +1,17 @@
+{
+  "name": "tldtools",
+  "description": "Extracts a domain into its component parts (based on John Kurkowski's tldextract python lib)",
+  "version": "0.1",
+  "author": "Michael Pearson <ossdistro@cloudspark.freshbutter.me>",
+  "main": "./index",
+  "engines": { "node": ">= 0.4.0" }
+  "dependencies": {
+    "request": "1.9.6"
+  },
+  "tags": ["domain", "tld", "extract", "parse", "subdomain", "domain tools"],
+  "repository" : {
+    "type": "git" ,
+    "url": "http://github.com/mjpearson/tldextract.git" 
+  },
+}
+
