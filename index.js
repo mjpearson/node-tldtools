@@ -1,11 +1,74 @@
 var 	request = require('request'),
-fs = require('fs'),
-sys = require('util');
+        fs = require('fs'),
+        sys = require('util');
 
 TLD_TOOLS = {
     _tldSource: 'http://mxr.mozilla.org/mozilla/source/netwerk/dns/src/effective_tld_names.dat?raw=1',
+    _tldLocalSource: __dirname + '/tlds_local',
     _tldCacheOut: __dirname + '/.tlds',
     _tldStruct: {},
+
+    _tldSourceParseData: function(data, onSuccess, onFail) {
+        var self = TLD_TOOLS;
+        var dataNorm = data.match(/^([.*!]*\w[\S]*)/gm);
+        var lines = dataNorm.toString().split("\r\n");
+        var lineNum = lines.length;
+sys.puts(lineNum);
+        // @todo scope fix?
+        var stream = fs.createWriteStream(TLD_TOOLS._tldCacheOut);
+
+        stream.once('open', function(fd) {
+            var newLine = '';
+            while (lineNum--) {
+                //newLine = lines[lineNum].split("").reverse().join("");
+                newLine = lines[lineNum].split(".").reverse().join(".");
+                stream.write(newLine + "TRAIL\n\n");
+                TLD_TOOLS._tldCacheBindRow(newLine);
+            }
+            if (undefined != onSuccess) {
+                onSuccess();
+            }
+        });
+    },
+
+    _readFileCB: function(filePath, readCallback, onSuccess, onFail) {
+        // load pre-parsed data
+        try {
+            fs.lstatSync(filePath);
+
+            // load the local file instead
+            fs.readFile(filePath, function(error, data) {
+                var dataString = data.toString();
+                if (error) {
+                    if (undefined != onFail) {
+                        onFail(dataString);
+                    }
+                } else {
+                    readCallback(dataString, onSuccess, onFail);
+                }
+            });
+        } catch (e) {
+            onFail(e.description);
+        }
+    },
+
+    _remoteTLDSourceLoad: function(onSuccess, onFail) {
+        
+        var self = this;
+        return function(onFail) {
+            sys.puts('No local source, retrieving from remote host ' + this._tldSource);
+            request(self._tldSource, function(error, res, body) {
+                if (error) {
+                    if (undefined != onFail) {
+                        onFail(body);
+                    }
+                } else {
+                    // sanitize lines
+                    self._tldSourceParseData(body, onSuccess, onFail);
+                }
+            });
+        }
+    },
 
     // ensures we have a local copy of the remote _tldSource file
     _syncTLDList: function(opts) {
@@ -32,39 +95,24 @@ TLD_TOOLS = {
         }
 
         if (refreshCache) {
-            request(this._tldSource, function(error, res, body) {
-                if (error) {
-                    if (undefined != onFail) {
-                        onFail(body);
-                    }
-                } else {
-                    // sanitize lines
-                    var bodyNorm = body.match(/^([.*!]*\w[\S]*)/gm);
-                    var lines = bodyNorm.toString().split('\n');
-                    var lineNum = lines.length;
-                    var stream = fs.createWriteStream(self._tldCacheOut);
-
-                    stream.once('open', function(fd) {
-                        var newLine = '';
-                        while (lineNum--) {
-                            newLine = lines[lineNum].split("").reverse().join("");
-                            stream.write(newLine + "\n");
-                            self._tldCacheBindRow(newLine);
-                        }
-                        if (undefined != onSucess) {
-                            onSuccess();
-                        }
-                    });
-                }
-            }); //.pipe(fs.createWriteStream(this._tldCacheOut));
+            this._readFileCB(
+                            this._tldLocalSource,
+                            this._tldSourceParseData,
+                            this._remoteTLDSourceLoad(onSuccess, onFail)
+                        );            
         } else {
-
-    }
+            // load pre-parsed data
+            this._readFileCB(
+                            this._tldCacheOut,
+                            this._tldSourceParseData,
+                            onFail
+                        );
+        }
     },
 
     // extract data and build our local map
-    _tldCacheBindRow: function(data) {
-        var tokens = data.split('.');
+    _tldCacheBindRow: function(row) {
+        var tokens = row.split('.');
         var tokenLength = tokens.length;
         var ptr = this._tldStruct;
         var token;
@@ -95,11 +143,11 @@ TLD_TOOLS = {
             sys.puts('TLD Cache is UP');
         }
 
-        var failFunc = function(errorBody) {
-            sys.puts('TLD Cache could not be SYNCED');
+        var failFunc = function(errorBody) {            
             if (undefined != errorBody) {
                 sys.puts(errorBody);
             }
+            sys.puts('TLD Cache could not be SYNCED');
         }
 
         this._syncTLDList( {
