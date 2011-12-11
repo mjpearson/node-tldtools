@@ -176,13 +176,14 @@ TLD_TOOLS = {
             var ptrLen = ptr.length;
             var token = tokens.shift();
 
-            if (ptr.indexOf(token) != -1) {
+            if (undefined != ptr.token) {
                 ++idx;
                 if (ptr[token].length > 0) {
                     ptr = ptr[token];
                     idx = this._arrDepth(tokens, ptr, idx);
                 }
-            } else if (ptr.indexOf('*') != -1) {
+
+            } else if (undefined != ptr['*']) {
                 ++idx;
             }
         }
@@ -253,7 +254,7 @@ TLD_TOOLS = {
         while (htIdx--) {            
             idxVal = hostTokens[htIdx];
             if (tldDepth > 0) {
-                tld.push(idxVal);
+                tld.unshift(idxVal);
             } else if (domain == '') {
                 domain = idxVal;
             } else {
