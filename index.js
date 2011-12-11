@@ -1,11 +1,11 @@
 var 	request = require('request'),
-fs = require('fs'),
-sys = require('util');
+        fs = require('fs'),
+        url = require('url');
 
 TLD_TOOLS = {
     _tldSource: 'http://mxr.mozilla.org/mozilla/source/netwerk/dns/src/effective_tld_names.dat?raw=1',
     _tldLocalSource: __dirname + '/tlds_local',
-    _tldCacheOut: __dirname + '/tlds',
+    _tldCacheOut: __dirname + '/.tlds',
     _tldStruct: {},
 
     _tldLineSnarf: function(data) {
@@ -21,8 +21,7 @@ TLD_TOOLS = {
         lines = lineMeta[0];
         lineNum = lineMeta[1];
 
-        // @todo scope fix?
-        var stream = fs.createWriteStream(TLD_TOOLS._tldCacheOut);
+        var stream = fs.createWriteStream(self._tldCacheOut);
 
         stream.once('open', function(fd) {
             var newLine = '';
@@ -33,20 +32,21 @@ TLD_TOOLS = {
             }
 
             if (undefined != onSuccess) {
-                console.log('done');
                 onSuccess();
             }
         });
     },
 
+    // data read callback vs cache
     _tldCacheParseData: function(data, onSuccess, onFail) {
-        var lineMeta = this._tldLineSnarf(data)
+        var self = TLD_TOOLS;
+
+        var lineMeta = self._tldLineSnarf(data)
         lines = lineMeta[0];
         lineNum = lineMeta[1];
-        var newLine = '';
+
         while (lineNum--) {
-            newLine = lines[lineNum].split(".").reverse().join(".");
-            self._tldCacheBindRow(newLine);
+            self._tldCacheBindRow(lines[lineNum]);
         }
 
         if (undefined != onSuccess) {
@@ -75,39 +75,33 @@ TLD_TOOLS = {
     _readFileCB: function(filePath, readCallback, onSuccess, onFail) {
         // load pre-parsed data
         try {
-            console.log(filePath + ' statted ');
             fs.lstatSync(filePath);
 
             // load the local file instead
             fs.readFile(filePath, function(error, data) {
                 var dataString = data.toString();
                 if (error) {
-                    console.log(filePath + ' stat failure ' );
-                    console.log(error);
                     if (undefined != onFail) {
-                        onFail(dataString);
+                        onFail(error);
                     }
                 } else {
-                    console.log(filePath + ' reading... ');
                     readCallback(dataString, onSuccess, onFail);
                 }
             });
         } catch (e) {
-            console.log(filePath + ' stat failure ' );
-            console.log(e);
             onFail(e.description);
         }
     },
 
     // Callback for remote tld source load fail
     _remoteTLDSourceLoad: function(onSuccess, onFail) {
-
         var self = this;
+
         return function(onSuccess, onFail) {
             request(self._tldSource, function(error, res, body) {
                 if (error) {
                     if (undefined != onFail) {
-                        sys.puts('No local source, retrieving from remote host ' + this._tldSource);
+                        console.log('No local source, retrieving from remote host ' + this._tldSource);
                         onFail(body);
                     }
                 } else {
@@ -143,7 +137,6 @@ TLD_TOOLS = {
         }
         refreshCache = true;
         if (refreshCache) {
-            console.log('refreshing');
             this._readFileCB(
                 this._tldLocalSource, // local path
                 this._tldSourceParseData, // read callback
@@ -151,7 +144,6 @@ TLD_TOOLS = {
                 this._remoteTLDSourceLoad(onSuccess, onFail) // onfail fallback and callback passthrough
                 );
         } else {
-            console.log('preparse load');
             // load pre-parsed data
             this._readFileCB(
                 this._tldCacheOut,  // local path
@@ -162,6 +154,56 @@ TLD_TOOLS = {
         }
     },
 
+    _arrDepth: function(tokens, ptr, idx) {
+        var ptrLen = ptr.length;
+        var token = tokens.shift();
+
+        if (ptr.indexOf(token)) {
+            ++idx;
+            if (ptr[token].length > 0) {
+                ptr = ptr[token];
+                idx = this._arrDepth(tokens, ptr, idx);
+            }
+        } else if (ptr.indexOf('*')) {
+            ++idx;
+        }
+        return idx;
+    },
+
+    // Attempts to extract the tld, domain and subdomain parts from the supplied 'fqdn' string
+    //
+    extract: function(fqdn, onFail) {
+        var tld = [], subdomain = [], domain = '';
+        var hostName = url.parse(fqdn)['hostname'];
+        var hostTokens = hostName.split('.').reverse();
+        var htIdx = hostTokens.length;
+        var gtld = hostTokens.shift();
+
+        tldDepth = (undefined != this._tldStruct[gtld]) ?
+                        this._arrDepth(hostTokens, this._tldStruct[gtld], 1) :
+                        0;       
+
+        hostTokens = hostName.split('.');
+
+        while (htIdx--) {            
+            idxVal = hostTokens[htIdx];
+            if (tldDepth > 0) {
+                tld.push(idxVal);
+            } else if (domain == '') {
+                domain = idxVal;
+            } else {
+                subdomain.push(idxVal);
+            }
+            --tldDepth;
+        }
+
+       return {
+           'subdomain' : subdomain.join('.'),
+           'domain' : domain,
+           'tld': tld.join('.')
+       };
+    },
+
     tldCacheRefresh: function(onSuccess, onFail) {
         this._syncTLDList( {
             'onSuccess': onSuccess,
@@ -169,19 +211,18 @@ TLD_TOOLS = {
         } );
     },
 
-
     init: function() {
         var self = this;
         var successFunc = function() {
-            console.log(self._tldStruct);
-            sys.puts('TLD Cache is UP');
+            //console.log(self._tldStruct);
+            console.log('TLD Cache is UP');
         }
 
         var failFunc = function(errorBody) {
             if (undefined != errorBody) {
-                sys.puts(errorBody);
+                console.log(errorBody);
             }
-            sys.puts('TLD Cache could not be synced');
+            console.log('TLD Cache could not be synced');
         }
 
         this._syncTLDList( {
