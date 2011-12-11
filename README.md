@@ -32,7 +32,7 @@ Returns...
     TLD Cache is UP
     { subdomain: 'wagga.wagga',
       domain: 'funkjazz',
-      tld: 'au.gov' }
+      tld: 'gov.au' }
 
 ### tldtools.tldCacheRefresh(onSuccess, onFail)
 
