@@ -1,7 +1,7 @@
 {
   "name": "tldtools",
   "description": "Extracts a domain into its component parts (based on John Kurkowski's tldextract python lib)",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "maintainers": [
   	{
   		"name": "Michael Pearson",
@@ -11,7 +11,7 @@
   "main": "./index",
   "engines": { "node": ">= 0.4.0" },
   "dependencies": {
-    "request": "1.9.6"
+    "request": ">= 2.2.9"
   },
   "keywords": ["domain", "tld", "extract", "parse", "subdomain", "domain tools", "whois"],
   "repository" : {
