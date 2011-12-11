@@ -1,12 +1,28 @@
 var 	request = require('request'),
         fs = require('fs'),
-        url = require('url');
+        url = require('url'),
+        net = require('net');
 
 TLD_TOOLS = {
     _tldSource: 'http://mxr.mozilla.org/mozilla/source/netwerk/dns/src/effective_tld_names.dat?raw=1',
     _tldLocalSource: __dirname + '/tlds_local',
     _tldCacheOut: __dirname + '/.tlds',
-    _tldStruct: {},
+
+    _whoisDefaultOpts: {
+        'hostname' : 'whois.internic.net',
+        'port' : 43,
+        'timeout' : false,
+        'authoritative' : 'true',
+        'onSuccess' : function(whoisData) {
+            console.log(whoisData);
+        },
+        'onFail' : function(errorMessage) {
+            console.log(errorMessage);
+        }
+    },
+
+    _tldCacheStruct: {},
+    _whoisCacheStruct: {},
 
     _tldLineSnarf: function(data) {
         var lines = data.match(/^([.*!]*\w[\S]*)/gm);
@@ -58,7 +74,7 @@ TLD_TOOLS = {
     _tldCacheBindRow: function(row) {
         var tokens = row.split('.');
         var tokenLength = tokens.length;
-        var ptr = this._tldStruct;
+        var ptr = this._tldCacheStruct;
         var token;
 
         if (tokenLength > 0) {
@@ -135,7 +151,7 @@ TLD_TOOLS = {
                 refreshCache = true;
             }
         }
-        refreshCache = true;
+
         if (refreshCache) {
             this._readFileCB(
                 this._tldLocalSource, // local path
@@ -155,32 +171,84 @@ TLD_TOOLS = {
     },
 
     _arrDepth: function(tokens, ptr, idx) {
-        var ptrLen = ptr.length;
-        var token = tokens.shift();
+        if (tokens.length != 0) {
 
-        if (ptr.indexOf(token)) {
-            ++idx;
-            if (ptr[token].length > 0) {
-                ptr = ptr[token];
-                idx = this._arrDepth(tokens, ptr, idx);
+            var ptrLen = ptr.length;
+            var token = tokens.shift();
+
+            if (ptr.indexOf(token) != -1) {
+                console.log(token + ' in ');
+                console.log(ptr);
+                ++idx;
+                if (ptr[token].length > 0) {
+                    ptr = ptr[token];
+                    idx = this._arrDepth(tokens, ptr, idx);
+                }
+            } else if (ptr.indexOf('*') != -1) {
+                ++idx;
             }
-        } else if (ptr.indexOf('*')) {
-            ++idx;
         }
+        
         return idx;
+    },
+
+    whois: function(fqdn, opts) {
+        var self = this;
+        if (undefined == opts) {
+            opts = this._whoisDefaultOpts;
+        }
+        var domainParts = this.extract(fqdn);
+        console.log(domainParts);
+        var onSuccess = (undefined != opts.onSuccess) ? opts.onSuccess : this._whoisDefaultOpts.onSuccess;
+        var onFail = (undefined != opts.onFail) ? opts.onFail : this._whoisDefaultOpts.onFail;
+
+        if (domainParts.domain != '' && domainParts.tld != '') {
+            var domainName = domainParts.domain + '.' + domainParts.tld;
+
+            if (undefined == this._whoisCacheStruct.domainName) {
+
+                var hostName = (undefined != opts.hostname) ? opts.hostname : this._whoisDefaultOpts.hostname;
+                var port = (undefined != opts.port) ? opts.port : this._whoisDefaultOpts.port;
+                var stream = net.createConnection(port, hostName);
+
+                stream.setEncoding('utf8');
+                stream.addListener('connect', function() {
+                    stream.write(domainName + "\r\n");
+                });
+
+                stream.addListener('data', function(data) {
+                    self._whoisCacheStruct.domainName = data;
+                    onSuccess(data);
+                });
+
+                stream.addListener('end', function() {
+                    stream.end();
+                });
+
+                stream.addListener('error', function(exception) {
+                    onFail(exception.description);
+                });
+            } else {
+                console.log('Returning from Cache');
+                onSuccess(this._whoisCacheStruct.domainName);
+            }
+        } else {
+            onFail(fqdn + ' is not a valid domain');
+        }
     },
 
     // Attempts to extract the tld, domain and subdomain parts from the supplied 'fqdn' string
     //
-    extract: function(fqdn, onFail) {
+    extract: function(fqdn) {
         var tld = [], subdomain = [], domain = '';
-        var hostName = url.parse(fqdn)['hostname'];
+        var urlTokens = url.parse(fqdn);
+        var hostName = (undefined != urlTokens.hostname) ? urlTokens.hostname : urlTokens.pathname;
         var hostTokens = hostName.split('.').reverse();
         var htIdx = hostTokens.length;
         var gtld = hostTokens.shift();
 
-        tldDepth = (undefined != this._tldStruct[gtld]) ?
-                        this._arrDepth(hostTokens, this._tldStruct[gtld], 1) :
+        tldDepth = (undefined != this._tldCacheStruct[gtld]) ?
+                        this._arrDepth(hostTokens, this._tldCacheStruct[gtld], 1) :
                         0;       
 
         hostTokens = hostName.split('.');
@@ -214,7 +282,7 @@ TLD_TOOLS = {
     init: function() {
         var self = this;
         var successFunc = function() {
-            //console.log(self._tldStruct);
+            //console.log(self._tldCacheStruct);
             console.log('TLD Cache is UP');
         }
 
