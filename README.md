@@ -1,18 +1,21 @@
-## tldtools
+# tldtools
 
 This module provides TLD domain extraction and resolution services.
 
-Installation
+## Installation
 
     npm install tldtools
 
-Usage
+## Usage
 
     var tldtools = require('tldtools');
 
 ### tldtools.extract(fqdn)
 
 Extracts tld, domain and subdomain parts from the provided fqdn (supports FQDNs names and URIs).
+
+Based on John Kurkowski's tldextract python library.
+
 Returns an object keyed by
 
 * tld - top level domain (com, gov.uk etc)
