@@ -5,14 +5,12 @@ var 	request = require('request'),
 
 TLD_TOOLS = {
     _tldSource: 'http://mxr.mozilla.org/mozilla/source/netwerk/dns/src/effective_tld_names.dat?raw=1',
-    _tldLocalSource: __dirname + '/tlds_local',
+    _tldLocalSource: __dirname + '/effective_tld_names.dat',
     _tldCacheOut: __dirname + '/.tlds',
 
     _whoisDefaultOpts: {
-        'hostname' : 'whois.internic.net',
+        'hostName' : 'whois.internic.net',
         'port' : 43,
-        'timeout' : false,
-        'authoritative' : 'true',
         'onSuccess' : function(whoisData) {
             console.log(whoisData);
         },
@@ -153,6 +151,7 @@ TLD_TOOLS = {
         }
 
         if (refreshCache) {
+            this._tldCacheStruct = {},
             this._readFileCB(
                 this._tldLocalSource, // local path
                 this._tldSourceParseData, // read callback
@@ -207,7 +206,7 @@ TLD_TOOLS = {
 
             if (undefined == this._whoisCacheStruct.domainName) {
 
-                var hostName = (undefined != opts.hostname) ? opts.hostname : this._whoisDefaultOpts.hostname;
+                var hostName = (undefined != opts.hostName) ? opts.hostName : this._whoisDefaultOpts.hostName;
                 var port = (undefined != opts.port) ? opts.port : this._whoisDefaultOpts.port;
                 var stream = net.createConnection(port, hostName);
 
@@ -226,14 +225,14 @@ TLD_TOOLS = {
                 });
 
                 stream.addListener('error', function(exception) {
-                    onFail(exception.description);
+                    onFail(exception.description, fqdn);
                 });
             } else {
                 console.log('Returning from Cache');
                 onSuccess(this._whoisCacheStruct.domainName);
             }
         } else {
-            onFail(fqdn + ' is not a valid domain');
+            onFail('Invalid Domain Name', fqdn);
         }
     },
 
@@ -275,7 +274,8 @@ TLD_TOOLS = {
     tldCacheRefresh: function(onSuccess, onFail) {
         this._syncTLDList( {
             'onSuccess': onSuccess,
-            'onFail': onFail
+            'onFail': onFail,
+            'refresh' : true
         } );
     },
 
