@@ -47,5 +47,19 @@ Available options (opts)
 
 * hostName - whois hostname (default whois.internic.net)
 * port - whois port (default 43)
-* onSuccess(whoisData) - whois request complete callback, containing utf8 encoded whois payload
-* onFail(errorMessage, fqdn) - failure callback
+* onSuccess - whois request complete callback containing utf8 encoded whois payload (first arg)
+* onFail - failure callback containing errormessage and fqdn context
+
+eg:
+
+    tldtools.whois(
+        'github.com',
+        {
+            'onSuccess' : function(whoisData) {
+                console.log(whoisData);
+            },
+            'onFail' : function(errorMessage, fqdn) {
+                console.log(fqdn + ' WHOIS FAILED');
+                console.log(errorMessage);
+            }
+        });

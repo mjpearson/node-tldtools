@@ -14,7 +14,8 @@ TLD_TOOLS = {
         'onSuccess' : function(whoisData) {
             console.log(whoisData);
         },
-        'onFail' : function(errorMessage) {
+        'onFail' : function(errorMessage, fqdn) {
+            console.log(fqdn + ' WHOIS FAILED');
             console.log(errorMessage);
         }
     },
@@ -176,8 +177,6 @@ TLD_TOOLS = {
             var token = tokens.shift();
 
             if (ptr.indexOf(token) != -1) {
-                console.log(token + ' in ');
-                console.log(ptr);
                 ++idx;
                 if (ptr[token].length > 0) {
                     ptr = ptr[token];
@@ -197,7 +196,7 @@ TLD_TOOLS = {
             opts = this._whoisDefaultOpts;
         }
         var domainParts = this.extract(fqdn);
-        console.log(domainParts);
+
         var onSuccess = (undefined != opts.onSuccess) ? opts.onSuccess : this._whoisDefaultOpts.onSuccess;
         var onFail = (undefined != opts.onFail) ? opts.onFail : this._whoisDefaultOpts.onFail;
 
@@ -228,7 +227,6 @@ TLD_TOOLS = {
                     onFail(exception.description, fqdn);
                 });
             } else {
-                console.log('Returning from Cache');
                 onSuccess(this._whoisCacheStruct.domainName);
             }
         } else {
