@@ -1,3 +1,24 @@
+/*
+Thanks for using tldtools, it's distributed under the MIT License (MIT)
+
+Copyright (c) 2011 Michael Pearson <ossdev@cloudspark.freshbutter.me>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in the
+Software without restriction, including without limitation the rights to use, copy,
+modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
 var 	request = require('request'),
         fs = require('fs'),
         url = require('url'),
@@ -11,13 +32,15 @@ TLD_TOOLS = {
     _whoisDefaultOpts: {
         'hostName' : 'whois.internic.net',
         'port' : 43,
+        'stream_encoding' : 'utf8',
         'onSuccess' : function(whoisData) {
             console.log(whoisData);
         },
         'onFail' : function(errorMessage, fqdn) {
             console.log(fqdn + ' WHOIS FAILED');
             console.log(errorMessage);
-        }
+        },
+        'cbPassthrough' : {}
     },
 
     _tldCacheStruct: {},
@@ -116,7 +139,7 @@ TLD_TOOLS = {
             request(self._tldSource, function(error, res, body) {
                 if (error) {
                     if (undefined != onFail) {
-                        console.log('No local source, retrieving from remote host ' + this._tldSource);
+                        console.log('No local source, retrieving from remote host ' + self._tldSource);
                         onFail(body);
                     }
                 } else {
@@ -193,16 +216,20 @@ TLD_TOOLS = {
 
     whois: function(fqdn, opts) {
         var self = this;
+        var domainParts = this.extract(fqdn);
+        // ---------------------- Opt parsing
         if (undefined == opts) {
             opts = this._whoisDefaultOpts;
-        }
-        var domainParts = this.extract(fqdn);
-
+        }        
         var onSuccess = (undefined != opts.onSuccess) ? opts.onSuccess : this._whoisDefaultOpts.onSuccess;
         var onFail = (undefined != opts.onFail) ? opts.onFail : this._whoisDefaultOpts.onFail;
+        var cbPassthrough = (undefined != opts.cbPassthrough) ? opts.cbPassthrough : this._whoisDefaultOpts.cbPassthrough;
+        var streamEncoding = (undefined != opts.stream_encoding) ? opts.stream_encoding : this._whoisDefaultOpts.stream_encoding;
 
-        if (domainParts.domain != '' && domainParts.tld != '') {
-            var domainName = domainParts.domain + '.' + domainParts.tld;
+        // assemble domain
+        if ( domainParts.inspect.useful() ) {
+
+            domainName = domainParts.inspect.getDomain();
 
             if (undefined == this._whoisCacheStruct.domainName) {
 
@@ -210,27 +237,34 @@ TLD_TOOLS = {
                 var port = (undefined != opts.port) ? opts.port : this._whoisDefaultOpts.port;
                 var stream = net.createConnection(port, hostName);
 
-                stream.setEncoding('utf8');
+                stream.setEncoding(streamEncoding);
+
+                // Request whois info
                 stream.addListener('connect', function() {
                     stream.write(domainName + "\r\n");
                 });
 
+                //  Data callback
                 stream.addListener('data', function(data) {
                     self._whoisCacheStruct.domainName = data;
-                    onSuccess(data);
+                    // @todo key parsed data
+                    onSuccess( { 'data_utf8_raw' : data }, fqdn, cbPassthrough );
                 });
 
+                // connection end
                 stream.addListener('end', function() {
                     stream.end();
                 });
 
+                // error callback
                 stream.addListener('error', function(exception) {
-                    onFail(exception.description, fqdn);
+                    onFail(exception.description, fqdn, cbPassthrough);
                 });
             } else {
                 onSuccess(this._whoisCacheStruct.domainName);
             }
         } else {
+            // doesn't look like a domain we can parse
             onFail('Invalid Domain Name', fqdn);
         }
     },
@@ -238,6 +272,7 @@ TLD_TOOLS = {
     // Attempts to extract the tld, domain and subdomain parts from the supplied 'fqdn' string
     //
     extract: function(fqdn) {
+
         var tld = [], subdomain = [], domain = '';
         var urlTokens = url.parse(fqdn);
         var hostName = (undefined != urlTokens.hostname) ? urlTokens.hostname : urlTokens.pathname;
@@ -258,7 +293,7 @@ TLD_TOOLS = {
             } else if (domain == '') {
                 domain = idxVal;
             } else {
-                subdomain.push(idxVal);
+                subdomain.unshift(idxVal);
             }
             --tldDepth;
         }
@@ -266,7 +301,16 @@ TLD_TOOLS = {
        return {
            'subdomain' : subdomain.join('.'),
            'domain' : domain,
-           'tld': tld.join('.')
+           'tld': tld.join('.'),
+           'url_tokens' : urlTokens,
+           'inspect' : {
+               'useful': function() {
+                   return (this.domain != '' && tld != '');
+               },
+               'getDomain' : function() {
+                   return this.domain + '.' + this.tld;
+               }
+           }
        };
     },
 
