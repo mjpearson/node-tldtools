@@ -305,7 +305,7 @@ TLD_TOOLS = {
            'url_tokens' : urlTokens,
            'inspect' : {
                'useful': function() {
-                   return (this.domain != '' && tld != '');
+                   return (this.domain != '' && this.tld != '');
                },
                'getDomain' : function() {
                    return this.domain + '.' + this.tld;
