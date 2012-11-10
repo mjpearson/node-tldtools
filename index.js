@@ -206,7 +206,7 @@ TLD_TOOLS = {
                     idx = this._arrDepth(tokens, ptr, idx);
                 }
 
-            } else if (undefined != ptr['*']) {
+            } else if (undefined != ptr['*'] && undefined == ptr['!' + token]) {
                 ++idx;
             }
         }
