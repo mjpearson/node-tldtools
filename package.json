@@ -1,11 +1,11 @@
 {
   "name": "tldtools",
   "description": "Extracts a domain into its component parts (node-url wrapper), performs domain inspection functions",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "maintainers": [
   	{
   		"name": "Michael Pearson",
-  		"email": "ossdistro@cloudspark.freshbutter.me"
+  		"email": "npm@m.bip.io"
   	}
   ],
   "main": "./index",
@@ -16,6 +16,6 @@
   "keywords": ["domain", "tld", "extract", "parse", "subdomain", "domain tools", "whois"],
   "repository" : {
     "type": "git" ,
-    "url": "http://github.com/mjpearson/tldtools.git"
+    "url": "https://github.com/mjpearson/node-tldtools.git"
   }
 }
