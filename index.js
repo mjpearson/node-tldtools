@@ -322,26 +322,22 @@ TLD_TOOLS = {
         } );
     },
 
-    init: function() {
+    init: function(success, fail) {
         var self = this;
-        var successFunc = function() {
-            //console.log(self._tldCacheStruct);
-            console.log('TLD Cache is UP');
-        }
-
-        var failFunc = function(errorBody) {
-            if (undefined != errorBody) {
-                console.log(errorBody);
-            }
-            console.log('TLD Cache could not be synced');
-        }
 
         this._syncTLDList( {
-            'onSuccess': successFunc,
-            'onFail' : failFunc
-        } );
+            'onSuccess': success || function() {            
+                    console.log('TLD Cache is UP');
+            },
+            'onFail' : fail || function(errorBody) {
+                if (undefined != errorBody) {
+                    console.log(errorBody);
+                }
+                console.log('TLD Cache could not be synced');
+            }
+        });
         return this;
     }
 }
 
-module.exports = TLD_TOOLS.init();
+module.exports = TLD_TOOLS;
