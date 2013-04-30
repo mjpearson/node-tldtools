@@ -8,7 +8,14 @@ This module provides TLD domain extraction and resolution services.
 
 ## Usage
 
+    var tldtools = require('tldtools').init();
+
+or
+
     var tldtools = require('tldtools');
+    tldtools.init(function() {
+        console.log('success!');
+    });
 
 ## TLD List Caching Notes and Operation
 
