@@ -40,7 +40,7 @@ Returns an object keyed by
 * inspect.useful() - closure reporting whether domain and tld parsed correctly
 * inspect.getDomain() - string concatenation of domain + tld
 
-eg:
+example URL that makes no sense :
 
     var tldtools = require('tldtools');
     console.log(tldtools.extract('http://bob:funk@wagga.wagga.funkjazz.gov.au:1234/?go=abc&123'));
