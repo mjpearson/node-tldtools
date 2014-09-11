@@ -1,6 +1,6 @@
 # tldtools
 
-This module provides TLD domain extraction and resolution services.
+This module provides TLD domain extraction and resolution services.  It's useful if you need to extract semantically meaningful tokens from a URL.
 
 ## Installation
 
