@@ -199,7 +199,7 @@ TLD_TOOLS = {
             var ptrLen = ptr.length;
             var token = tokens.shift();
 
-            if (undefined != ptr.token) {
+            if (undefined != ptr[token]) {
                 ++idx;
                 if (ptr[token].length > 0) {
                     ptr = ptr[token];
