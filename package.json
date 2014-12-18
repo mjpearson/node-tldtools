@@ -1,14 +1,14 @@
 {
   "name": "tldtools",
   "description": "Extracts a domain into its component parts (node-url wrapper), performs domain inspection functions",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "maintainers": [
   	{
   		"name": "Michael Pearson",
   		"email": "npm@m.bip.io"
   	}
   ],
-  "license": "Apache, Version 2.0",
+  "license": "MIT",
   "main": "./index",
   "engines": { "node": ">= 0.4.0" },
   "dependencies": {
