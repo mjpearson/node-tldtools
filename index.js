@@ -18,6 +18,8 @@ INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PA
 PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
 FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+You should have received a copy of the Apache 2 license along with this program.  If not, see http://www.apache.org/licenses/LICENSE-2.0
 */
 var 	request = require('request'),
         fs = require('fs'),
@@ -210,7 +212,7 @@ TLD_TOOLS = {
                 ++idx;
             }
         }
-        
+
         return idx;
     },
 
@@ -220,7 +222,7 @@ TLD_TOOLS = {
         // ---------------------- Opt parsing
         if (undefined == opts) {
             opts = this._whoisDefaultOpts;
-        }        
+        }
         var onSuccess = (undefined != opts.onSuccess) ? opts.onSuccess : this._whoisDefaultOpts.onSuccess;
         var onFail = (undefined != opts.onFail) ? opts.onFail : this._whoisDefaultOpts.onFail;
         var cbPassthrough = (undefined != opts.cbPassthrough) ? opts.cbPassthrough : this._whoisDefaultOpts.cbPassthrough;
@@ -282,11 +284,11 @@ TLD_TOOLS = {
 
         tldDepth = (undefined != this._tldCacheStruct[gtld]) ?
                         this._arrDepth(hostTokens, this._tldCacheStruct[gtld], 1) :
-                        0;       
+                        0;
 
         hostTokens = hostName.split('.');
 
-        while (htIdx--) {            
+        while (htIdx--) {
             idxVal = hostTokens[htIdx];
             if (tldDepth > 0) {
                 tld.unshift(idxVal);
@@ -326,7 +328,7 @@ TLD_TOOLS = {
         var self = this;
 
         this._syncTLDList( {
-            'onSuccess': success || function() {            
+            'onSuccess': success || function() {
                     console.log('TLD Cache is UP');
             },
             'onFail' : fail || function(errorBody) {

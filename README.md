@@ -43,7 +43,7 @@ Returns an object keyed by
 example URL that makes no sense :
 
     var tldtools = require('tldtools').init(function() {
-        console.log(tldtools.extract('http://bob:funk@wagga.wagga.funkjazz.gov.au:1234/?go=abc&123'));    
+        console.log(tldtools.extract('http://bob:funk@wagga.wagga.funkjazz.gov.au:1234/?go=abc&123'));
     });
 
 Returns...
@@ -103,3 +103,7 @@ eg:
         },
         'cbPassthrough' : ['some data']
     });
+
+## License
+
+[Apache 2](http://www.apache.org/licenses/LICENSE-2.0)
