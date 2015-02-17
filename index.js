@@ -277,7 +277,7 @@ TLD_TOOLS = {
     extract: function(fqdn) {
 
         var tld = [], subdomain = [], domain = '';
-        var urlTokens = url.parse(/^http/.test(fqdn) ? fqdn : ('https://' + fqdn) );
+        var urlTokens = url.parse(/^http/.test(fqdn) ? fqdn : ('http://' + fqdn) );
         var hostName = (undefined != urlTokens.hostname) ? urlTokens.hostname : urlTokens.pathname;
         var hostTokens = hostName.split('.').reverse();
         var htIdx = hostTokens.length;
