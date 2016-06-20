@@ -28,7 +28,7 @@ var 	request = require('request'),
         net = require('net');
 
 TLD_TOOLS = {
-    _tldSource: 'http://mxr.mozilla.org/mozilla/source/netwerk/dns/src/effective_tld_names.dat?raw=1',
+    _tldSource: 'https://publicsuffix.org/list/public_suffix_list.dat',
     _tldLocalSource: __dirname + '/effective_tld_names.dat',
     _tldCacheOut: __dirname + '/.tlds',
 

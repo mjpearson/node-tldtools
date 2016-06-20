@@ -19,7 +19,7 @@ or
 
 ## TLD List Caching Notes and Operation
 
-  The first time tldtools is loaded it will attempt to call out to `http://mxr.mozilla.org/mozilla/source/netwerk/dns/src/effective_tld_names.dat?raw=1`
+  The first time tldtools is loaded it will attempt to call out to `https://publicsuffix.org/list/public_suffix_list.dat`
 to retrieve the latest TLD list.  This file is parsed, normalised and stored in `/.tlds`.  To override this outbound call and look locally, place your
 own overriding file in `/effective_tld_names.dat`
 
